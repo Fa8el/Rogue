@@ -16,15 +16,15 @@ public class PlayerController : MonoBehaviour
     // --- MOVIMIENTO ---
     [SerializeField] private float speedInicial = 5f;
     [SerializeField] private float multiplicadorSprint = 1.5f;
-    private float speedActual;
-    private Rigidbody2D rb;
+        private float speedActual;
+        private Rigidbody2D rb;
 
     // --- ANIMACIÓN ---
     private Animator animator;
 
     [Header("Ataque")]
 [SerializeField] private float rangoAtaque = 1f;
-[SerializeField] private int danioAtaque = 1;
+[SerializeField] private int danioAtaque = 20;
 [SerializeField] private LayerMask capaEnemigos;
 [SerializeField] private Transform puntoAtaque;
 
