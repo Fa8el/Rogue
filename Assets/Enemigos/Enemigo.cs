@@ -8,14 +8,21 @@ public class Enemigo : MonoBehaviour
     public float velocidad = 2f;
     public float detectionRange = 5f;
     public int daño = 10;
+    private bool giroIzq = false;
 
     protected Transform jugador;
+    protected Animator animator;
     private EnemyManager enemyManager;
-    public bool esDeOleada = false;  // <-- Variable para marcar si es enemigo de oleada
+    public bool esDeOleada = false;
+
+    // Cooldown de ataque
+    protected float tiempoEntreAtaques = 1.5f;
+    private float ultimoAtaque = -999f;
 
     protected virtual void Start()
     {
         jugador = GameObject.FindWithTag("Player")?.transform;
+        animator = GetComponent<Animator>();
 
         if (jugador == null)
         {
@@ -26,7 +33,6 @@ public class Enemigo : MonoBehaviour
             Debug.Log("✅ Jugador encontrado: " + jugador.name);
         }
 
-        // Buscar y registrar en el EnemyManager
         enemyManager = FindObjectOfType<EnemyManager>();
         enemyManager?.RegistrarEnemigo();
     }
@@ -37,12 +43,14 @@ public class Enemigo : MonoBehaviour
 
         float distancia = Vector2.Distance(transform.position, jugador.position);
 
-        // Si es de oleada, persigue siempre; si no, solo dentro del rango detectionRange
         if (esDeOleada || distancia < detectionRange)
         {
-            MoverHaciaJugador();
-
-            if (distancia < 1.2f)
+            // 🚫 NO se mueve si está lo suficientemente cerca (no empuja)
+            if (distancia > 1.2f)
+            {
+                MoverHaciaJugador();
+            }
+            else
             {
                 Atacar();
             }
@@ -52,17 +60,33 @@ public class Enemigo : MonoBehaviour
     protected virtual void MoverHaciaJugador()
     {
         Vector2 direccion = (jugador.position - transform.position).normalized;
-        transform.position += (Vector3)direccion * velocidad * Time.deltaTime;
-    }
 
-    public virtual void Mover()
-    {
-        Debug.Log("El enemigo se mueve a velocidad " + velocidad);
+        // ✅ Movimiento suave que respeta la distancia sin empujar
+        transform.position = Vector2.MoveTowards(transform.position, jugador.position, velocidad * Time.deltaTime);
+
+        FlipSprite(direccion);
     }
 
     public virtual void Atacar()
     {
-        Debug.Log("El enemigo ataca con daño " + daño);
+        if (!PuedeAtacar()) return;
+        RegistrarAtaque();
+
+        Debug.Log($"💥 [{gameObject.name}] Atacando con daño {daño}");
+
+        if (jugador != null)
+        {
+            PlayerController playerScript = jugador.GetComponent<PlayerController>();
+            if (playerScript != null && !playerScript.estaMuerto)
+            {
+                playerScript.RecibirDanio(daño, transform.position);
+                Debug.Log($"Jugador recibió daño: {daño} (vida: {playerScript.VidaActual})");
+            }
+            else
+            {
+                Debug.LogWarning("No se encontró PlayerController en el jugador o está muerto");
+            }
+        }
     }
 
     public void RecibirDanio(int cantidad)
@@ -88,8 +112,35 @@ public class Enemigo : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
     }
+
+    protected void FlipSprite(Vector3 direction)
+    {
+        if (direction.x < 0 && !giroIzq)
+        {
+            giroIzq = true;
+            Vector3 ls = transform.localScale;
+            ls.x *= -1;
+            transform.localScale = ls;
+        }
+        else if (direction.x > 0 && giroIzq)
+        {
+            giroIzq = false;
+            Vector3 ls = transform.localScale;
+            ls.x *= -1;
+            transform.localScale = ls;
+        }
+    }
+
+    // Cooldown helpers
+    protected bool PuedeAtacar()
+    {
+        float tiempoDesdeUltimo = Time.time - ultimoAtaque;
+        Debug.Log($"⏱️ [{gameObject.name}] Tiempo desde último ataque: {tiempoDesdeUltimo:F2} / Necesario: {tiempoEntreAtaques}");
+        return tiempoDesdeUltimo >= tiempoEntreAtaques;
+    }
+
+    protected void RegistrarAtaque()
+    {
+        ultimoAtaque = Time.time;
+    }
 }
-
-
-
-

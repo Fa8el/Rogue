@@ -8,50 +8,72 @@ public class PlayerController : MonoBehaviour
     private int movimientoVertical;
     private Vector2 mov;
     bool giroIzq;
+    public bool estaMuerto = false;
+    [SerializeField] private float fuerzaRebote = 5f;  // Fuerza del rebote
+
+    private bool enRebote = false;
+    private float duracionRebote = 0.3f;
+    private float tiempoInicioRebote;
 
     // --- VIDA ---
     [SerializeField] private int vidaMaxima = 5;
-    private int vidaActual;
+    public int vidaActual;
+    public int VidaActual => vidaActual;
 
     // --- MOVIMIENTO ---
-    [SerializeField] private float speedInicial = 5f;
-    [SerializeField] private float multiplicadorSprint = 1.5f;
-        private float speedActual;
-        private Rigidbody2D rb;
+    [SerializeField] private float speedInicial = 3f;          // Antes estaba en 5f, más lento
+[SerializeField] private float multiplicadorSprint = 1.3f;
+    private float speedActual;
+    private Rigidbody2D rb;
 
     // --- ANIMACIÓN ---
     private Animator animator;
 
     [Header("Ataque")]
-[SerializeField] private float rangoAtaque = 1f;
-[SerializeField] private int danioAtaque = 20;
-[SerializeField] private LayerMask capaEnemigos;
-[SerializeField] private Transform puntoAtaque;
-
+    [SerializeField] private float rangoAtaque = 1f;
+    [SerializeField] private int danioAtaque = 20;
+    [SerializeField] private LayerMask capaEnemigos;
+    [SerializeField] private Transform puntoAtaque;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
 
-        // Guardamos la velocidad base
         speedActual = speedInicial;
         vidaActual = vidaMaxima;
     }
 
     void Update()
     {
-        Moverse();
-        FlipSprite();
-        Attack();
+        if (estaMuerto) return;
+
+        if (!enRebote)
+        {
+            Moverse();
+            FlipSprite();
+            Attack();
+        }
     }
 
     void FixedUpdate()
     {
-        // Movimiento del personaje con física
-        rb.velocity = mov * speedActual * Time.fixedDeltaTime;
+        if (estaMuerto) return;
 
-        // Actualizamos animación según movimiento
+        if (enRebote)
+        {
+            if (Time.time - tiempoInicioRebote > duracionRebote)
+            {
+                enRebote = false; // Fin del rebote
+            }
+            else
+            {
+                return; // No hacer nada mientras dure el rebote
+            }
+        }
+
+        rb.velocity = mov * speedActual;
+
         if (Mathf.Abs(rb.velocity.x) > 0 || Mathf.Abs(rb.velocity.y) > 0)
         {
             animator.SetFloat("xVelocity", 1);
@@ -64,7 +86,6 @@ public class PlayerController : MonoBehaviour
 
     void Moverse()
     {
-        // Sprint con LeftShift
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             speedActual = speedInicial * multiplicadorSprint;
@@ -74,7 +95,6 @@ public class PlayerController : MonoBehaviour
             speedActual = speedInicial;
         }
 
-        // Movimiento horizontal
         if (Input.GetKey(KeyCode.D))
         {
             movimientoHorizontal = 1;
@@ -88,7 +108,6 @@ public class PlayerController : MonoBehaviour
             movimientoHorizontal = 0;
         }
 
-        // Movimiento vertical
         if (Input.GetKey(KeyCode.W))
         {
             movimientoVertical = 1;
@@ -102,7 +121,6 @@ public class PlayerController : MonoBehaviour
             movimientoVertical = 0;
         }
 
-        // Vector de movimiento normalizado
         mov = new Vector2(movimientoHorizontal, movimientoVertical).normalized;
     }
 
@@ -115,12 +133,18 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void RecibirDanio(int cantidad)
+    public void RecibirDanio(int cantidad, Vector2 posicionAtacante)
     {
+        if (estaMuerto) return;
+
         vidaActual -= cantidad;
         vidaActual = Mathf.Clamp(vidaActual, 0, vidaMaxima);
-
         Debug.Log("Vida actual: " + vidaActual);
+
+        // Calcular dirección de rebote: del atacante al jugador
+        Vector2 direccionRebote = (transform.position - (Vector3)posicionAtacante).normalized;
+
+        AplicarRebote(direccionRebote);
 
         if (vidaActual <= 0)
         {
@@ -130,7 +154,22 @@ public class PlayerController : MonoBehaviour
 
     private void Morir()
     {
+        if (estaMuerto) return;
+
+        estaMuerto = true;
+
         Debug.Log("¡Jugador muerto!");
+
+        rb.velocity = Vector2.zero;
+        animator.SetBool("estaMuerto", true);
+
+        // Espera 1 segundo antes de desactivar el jugador
+        Invoke("DesactivarJugador", 1f);
+      
+    }
+
+    private void DesactivarJugador()
+    {
         gameObject.SetActive(false);
     }
 
@@ -153,25 +192,35 @@ public class PlayerController : MonoBehaviour
     }
 
     private void RealizarAtaque()
-{
-    // Detecta todos los colliders en el área de ataque
-    Collider2D[] enemigosGolpeados = Physics2D.OverlapCircleAll(puntoAtaque.position, rangoAtaque, capaEnemigos);
-
-    foreach (Collider2D enemigo in enemigosGolpeados)
     {
-        // Suponemos que tiene un script con método RecibirDanio
-        enemigo.GetComponent<Enemigo>()?.RecibirDanio(danioAtaque);
+        Collider2D[] enemigosGolpeados = Physics2D.OverlapCircleAll(puntoAtaque.position, rangoAtaque, capaEnemigos);
+
+        foreach (Collider2D enemigo in enemigosGolpeados)
+        {
+            enemigo.GetComponent<Enemigo>()?.RecibirDanio(danioAtaque);
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (puntoAtaque == null) return;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(puntoAtaque.position, rangoAtaque);
+    }
+
+    public void AplicarRebote(Vector2 direccionRebote)
+    {
+        if (estaMuerto) return;
+
+        enRebote = true;
+        tiempoInicioRebote = Time.time;
+
+        rb.velocity = Vector2.zero;
+        rb.AddForce(direccionRebote.normalized * fuerzaRebote, ForceMode2D.Impulse);
     }
 }
 
-void OnDrawGizmosSelected()
-{
-    if (puntoAtaque == null) return;
-    Gizmos.color = Color.red;
-    Gizmos.DrawWireSphere(puntoAtaque.position, rangoAtaque);
-}
 
-}
 
 
 

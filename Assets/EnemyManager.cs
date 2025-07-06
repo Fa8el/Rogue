@@ -35,52 +35,60 @@ public class EnemyManager : MonoBehaviour
     }
 
     IEnumerator CicloOleadas()
+{
+    oleadaActiva = true;
+    jefeSpawned = false;
+    enemigosGenerados = 0;
+
+    Debug.Log("🟢 Iniciando oleada");
+
+    float tiempoInicio = Time.time;
+
+    // 1. Generar enemigos durante un tiempo limitado
+    while (Time.time < tiempoInicio + duracionOleada && enemigosGenerados < enemigosEnOleada)
     {
-        oleadaActiva = true;
-        jefeSpawned = false;
-        enemigosGenerados = 0;
-
-        Debug.Log("🟢 Iniciando oleada");
-
-        float tiempoInicio = Time.time;
-
-        // Mientras dure la oleada y no se hayan generado todos los enemigos
-        while (Time.time < tiempoInicio + duracionOleada && enemigosGenerados < enemigosEnOleada)
-        {
-            SpawnEnemigo();
-            enemigosGenerados++;
-            yield return new WaitForSeconds(tiempoEntreSpawn);
-        }
-
-        // Esperamos que el jugador elimine todos los enemigos antes de continuar
-        Debug.Log("Esperando que elimines todos los enemigos de la oleada...");
-
-        // Esperar a que mueran todos los enemigos de la oleada (incluido jefe si ya spawneó)
-        while (enemigosVivos > 0)
-        {
-            yield return null;
-        }
-
-        // Spawn jefe después de eliminar todos enemigos normales
-        if (!jefeSpawned)
-        {
-            SpawnJefe();
-            jefeSpawned = true;
-        }
-
-        // Esperar que el jugador elimine al jefe
-        Debug.Log("Esperando que elimines al jefe...");
-
-        while (enemigosVivos > 0)
-        {
-            yield return null;
-        }
-
-        Debug.Log("🔴 Oleada terminada. Esperando para la siguiente...");
-        yield return new WaitForSeconds(tiempoEntreOleadas);
-
-        oleadaActiva = false;
+        SpawnEnemigo();
+        enemigosGenerados++;
+        yield return new WaitForSeconds(tiempoEntreSpawn);
     }
+
+    Debug.Log("⏳ Tiempo agotado. Matando enemigos vivos...");
+
+    // 2. Matar enemigos restantes automáticamente
+    Enemigo[] enemigosRestantes = FindObjectsOfType<Enemigo>();
+
+    foreach (Enemigo e in enemigosRestantes)
+    {
+        if (!e.gameObject.CompareTag("Jefe"))  // si querés evitar matar un jefe por accidente
+        {
+            Destroy(e.gameObject);
+            enemigosVivos--;
+        }
+    }
+
+    Debug.Log("☠️ Todos los enemigos normales han sido eliminados");
+
+    // 3. Spawn del jefe
+    if (!jefeSpawned)
+    {
+        SpawnJefe();
+        jefeSpawned = true;
+    }
+
+    Debug.Log("👑 Jefe en escena. Esperando su eliminación...");
+
+    // 4. Esperar que el jefe muera
+    while (enemigosVivos > 0)
+    {
+        yield return null;
+    }
+
+    Debug.Log("✅ Jefe eliminado. Oleada completa. Esperando siguiente...");
+    yield return new WaitForSeconds(tiempoEntreOleadas);
+
+    oleadaActiva = false;
+}
+
 
     void SpawnEnemigo()
     {
