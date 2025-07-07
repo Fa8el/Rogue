@@ -22,7 +22,7 @@ public class Enemigo : MonoBehaviour
     protected virtual void Start()
     {
         jugador = GameObject.FindWithTag("Player")?.transform;
-        animator = GetComponent<Animator>();
+        animator = GetComponentInChildren<Animator>(); // Cambio acá para buscar en hijos también
 
         if (jugador == null)
         {
@@ -45,7 +45,6 @@ public class Enemigo : MonoBehaviour
 
         if (esDeOleada || distancia < detectionRange)
         {
-            // 🚫 NO se mueve si está lo suficientemente cerca (no empuja)
             if (distancia > 1.2f)
             {
                 MoverHaciaJugador();
@@ -60,10 +59,7 @@ public class Enemigo : MonoBehaviour
     protected virtual void MoverHaciaJugador()
     {
         Vector2 direccion = (jugador.position - transform.position).normalized;
-
-        // ✅ Movimiento suave que respeta la distancia sin empujar
         transform.position = Vector2.MoveTowards(transform.position, jugador.position, velocidad * Time.deltaTime);
-
         FlipSprite(direccion);
     }
 
@@ -89,7 +85,7 @@ public class Enemigo : MonoBehaviour
         }
     }
 
-    public void RecibirDanio(int cantidad)
+    public void RecibirDanio(int cantidad, Vector2 origen)
     {
         vida -= cantidad;
         Debug.Log("⚔️ Enemigo recibió daño. Vida actual: " + vida);
@@ -100,11 +96,17 @@ public class Enemigo : MonoBehaviour
         }
     }
 
-    private void Morir()
+    protected virtual void Morir()
     {
         Debug.Log("💀 ¡Enemigo destruido!");
         enemyManager?.EliminarEnemigo();
-        Destroy(gameObject);
+
+        if (animator != null)
+        {
+            animator.SetBool("estaMuerto", true);
+        }
+
+        Destroy(gameObject, 1.5f); // Espera 1.5s para que la animación se reproduzca antes de destruir
     }
 
     private void OnDrawGizmosSelected()
@@ -131,7 +133,6 @@ public class Enemigo : MonoBehaviour
         }
     }
 
-    // Cooldown helpers
     protected bool PuedeAtacar()
     {
         float tiempoDesdeUltimo = Time.time - ultimoAtaque;
@@ -144,3 +145,6 @@ public class Enemigo : MonoBehaviour
         ultimoAtaque = Time.time;
     }
 }
+
+
+

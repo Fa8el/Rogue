@@ -16,10 +16,11 @@ public class PlayerController : MonoBehaviour
     private float tiempoInicioRebote;
 
     // --- VIDA ---
-    [SerializeField] private int vidaMaxima = 5;
-    public int vidaActual;
-    public int VidaActual => vidaActual;
+   [SerializeField] private int vidaMaxima = 5;
+public int VidaMaxima => vidaMaxima;
 
+public int vidaActual;
+public int VidaActual => vidaActual;
     // --- MOVIMIENTO ---
     [SerializeField] private float speedInicial = 3f;          // Antes estaba en 5f, más lento
 [SerializeField] private float multiplicadorSprint = 1.3f;
@@ -197,7 +198,8 @@ public class PlayerController : MonoBehaviour
 
         foreach (Collider2D enemigo in enemigosGolpeados)
         {
-            enemigo.GetComponent<Enemigo>()?.RecibirDanio(danioAtaque);
+            enemigo.GetComponent<Enemigo>()?.RecibirDanio(danioAtaque, transform.position);
+
         }
     }
 
@@ -219,8 +221,3 @@ public class PlayerController : MonoBehaviour
         rb.AddForce(direccionRebote.normalized * fuerzaRebote, ForceMode2D.Impulse);
     }
 }
-
-
-
-
-

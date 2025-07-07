@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class EnemigoSlime : Enemigo
 {
+    public bool estaMuerto = false;
+
     protected override void Start()
     {
         base.Start();
@@ -11,7 +13,7 @@ public class EnemigoSlime : Enemigo
         velocidad = 2f;
         detectionRange = 5f;
         daño = 5;
-        tiempoEntreAtaques = 1.5f; // 🔁 tiempo entre ataques (personalizado para slime)
+        tiempoEntreAtaques = 1.5f;
     }
 
     public override void Atacar()
@@ -20,7 +22,7 @@ public class EnemigoSlime : Enemigo
         RegistrarAtaque();
 
         if (animator != null)
-            animator.SetTrigger("ataca"); // Trigger definido en Animator
+            animator.SetTrigger("ataca");
 
         if (jugador != null)
         {
@@ -28,13 +30,10 @@ public class EnemigoSlime : Enemigo
             if (playerScript != null && !playerScript.estaMuerto)
             {
                 playerScript.RecibirDanio(daño, transform.position);
-
-                Debug.Log("Jugador recibió daño: " + daño);
             }
         }
 
-        Debug.Log("💥 Estoy atacando");
-        Debug.Log("Enemigo básico ataca con daño " + daño);
+        Debug.Log("💥 Slime ataca con daño " + daño);
     }
 
     protected override void MoverHaciaJugador()
@@ -42,5 +41,25 @@ public class EnemigoSlime : Enemigo
         Vector2 direccion = (jugador.position - transform.position).normalized;
         transform.position += (Vector3)direccion * velocidad * Time.deltaTime;
         FlipSprite(direccion);
+    }
+
+    protected override void Morir()
+    {
+        if (estaMuerto) return;
+
+        estaMuerto = true;
+
+        Debug.Log("🟢 Slime murió");
+        Debug.Log("🟩 Morir() slime");
+
+        if (animator != null)
+            animator.SetBool("estaMuerto", true);
+
+        Invoke("DesactivarSlime", 1f); // espera a que termine la animación
+    }
+
+    private void DesactivarSlime()
+    {
+        Destroy(gameObject);
     }
 }
