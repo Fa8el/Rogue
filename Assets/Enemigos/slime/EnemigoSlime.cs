@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EnemigoSlime : Enemigo
+public class EnemigoSlime : EnemigoPadre
 {
     public bool estaMuerto = false;
 
@@ -10,19 +10,23 @@ public class EnemigoSlime : Enemigo
     {
         base.Start();
         vida = 100;
+        vidaMaxima = 100;
         velocidad = 2f;
-        detectionRange = 5f;
+        rangoAtaque = 1.2f;
+        cooldownAtaque = 1.5f;
         daño = 5;
-        tiempoEntreAtaques = 1.5f;
     }
 
-    public override void Atacar()
+    protected override void Update()
     {
-        if (!PuedeAtacar()) return;
-        RegistrarAtaque();
+        if (estaMuerto) return;
+        base.Update();
+    }
 
-        if (animator != null)
-            animator.SetTrigger("ataca");
+    protected override void Atacar()
+    {
+        if (Time.time - tiempoUltimoAtaque < cooldownAtaque) return;
+        tiempoUltimoAtaque = Time.time;
 
         if (jugador != null)
         {
@@ -36,11 +40,10 @@ public class EnemigoSlime : Enemigo
         Debug.Log("💥 Slime ataca con daño " + daño);
     }
 
-    protected override void MoverHaciaJugador()
+    protected override void MoverseHaciaJugador()
     {
         Vector2 direccion = (jugador.position - transform.position).normalized;
-        transform.position += (Vector3)direccion * velocidad * Time.deltaTime;
-        FlipSprite(direccion);
+        transform.position = Vector2.MoveTowards(transform.position, jugador.position, velocidad * Time.deltaTime);
     }
 
     protected override void Morir()
@@ -50,16 +53,17 @@ public class EnemigoSlime : Enemigo
         estaMuerto = true;
 
         Debug.Log("🟢 Slime murió");
-        Debug.Log("🟩 Morir() slime");
 
-        if (animator != null)
-            animator.SetBool("estaMuerto", true);
-
-        Invoke("DesactivarSlime", 1f); // espera a que termine la animación
-    }
-
-    private void DesactivarSlime()
-    {
         Destroy(gameObject);
     }
+
+    public override void RecibirDanio(int cantidad)
+    {
+        if (estaMuerto) return;
+
+        Debug.Log($"{gameObject.name} recibió {cantidad} de daño.");
+        base.RecibirDanio(cantidad);
+    }
 }
+
+

@@ -198,7 +198,7 @@ public int VidaActual => vidaActual;
 
         foreach (Collider2D enemigo in enemigosGolpeados)
         {
-            enemigo.GetComponent<Enemigo>()?.RecibirDanio(danioAtaque, transform.position);
+            enemigo.GetComponent<EnemigoPadre>()?.RecibirDanio(danioAtaque);
 
         }
     }
