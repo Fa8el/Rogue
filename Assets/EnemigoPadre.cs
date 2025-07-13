@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemigoPadre : MonoBehaviour
@@ -47,20 +45,10 @@ public class EnemigoPadre : MonoBehaviour
 
         float distancia = Vector2.Distance(transform.position, jugador.position);
 
-        if (distancia > rangoAtaque)
-        {
-            MoverseHaciaJugador();
-        }
-        else
+        if (distancia <= rangoAtaque)
         {
             Atacar();
         }
-    }
-
-    protected virtual void MoverseHaciaJugador()
-    {
-        Vector2 direccion = (jugador.position - transform.position).normalized;
-        transform.position = Vector2.MoveTowards(transform.position, jugador.position, velocidad * Time.deltaTime);
     }
 
     protected virtual void Atacar()
@@ -118,4 +106,5 @@ public class EnemigoPadre : MonoBehaviour
         }
     }
 }
+
 
