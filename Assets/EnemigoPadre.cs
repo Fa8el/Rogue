@@ -10,7 +10,7 @@ public class EnemigoPadre : MonoBehaviour
 
     protected Transform jugador;
     protected Rigidbody2D rb;
-    private SpriteRenderer sr;
+    protected SpriteRenderer sr;
     private ParticleSystem niebla;
     private ParticleSystem.EmissionModule emission;
 
@@ -18,6 +18,9 @@ public class EnemigoPadre : MonoBehaviour
     public float rangoAtaque = 1.2f;
     public float cooldownAtaque = 1.5f;
     protected float tiempoUltimoAtaque;
+
+    protected Animator anim;
+
 
     protected virtual void Start()
     {
@@ -37,6 +40,10 @@ public class EnemigoPadre : MonoBehaviour
             niebla.Play();
             ActualizarNiebla();
         }
+        anim = GetComponent<Animator>();
+        if (anim == null)
+        Debug.LogWarning($"⚠️ {gameObject.name} no tiene Animator asignado.");
+
     }
 
     protected virtual void Update()
@@ -60,7 +67,11 @@ public class EnemigoPadre : MonoBehaviour
             {
                 player.RecibirDanio(daño, transform.position);
                 Debug.Log($"💥 {gameObject.name} atacó al jugador con {daño} de daño.");
+                if (anim != null)
+                anim.SetTrigger("ataque");
+
                 tiempoUltimoAtaque = Time.time;
+
             }
         }
     }
@@ -86,7 +97,17 @@ public class EnemigoPadre : MonoBehaviour
             niebla.Stop();
         }
 
-        Destroy(gameObject);
+        //Destroy(gameObject);
+        if (anim != null)
+    anim.SetTrigger("muerte");
+
+// Desactivar física y collider para que no estorbe
+rb.velocity = Vector2.zero;
+GetComponent<Collider2D>().enabled = false;
+
+// Destruir después de la animación (1 segundo por ejemplo)
+Destroy(gameObject, 1.2f);
+
     }
 
     protected virtual void ActualizarNiebla()
