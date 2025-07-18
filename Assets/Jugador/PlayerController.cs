@@ -154,20 +154,31 @@ public int VidaActual => vidaActual;
     }
 
     private void Morir()
+{
+    if (estaMuerto) return;
+
+    estaMuerto = true;
+
+    Debug.Log("¡Jugador muerto!");
+
+    rb.velocity = Vector2.zero;
+    animator.SetBool("estaMuerto", true);
+
+    if (vidaActual <= 0)
     {
-        if (estaMuerto) return;
-
-        estaMuerto = true;
-
-        Debug.Log("¡Jugador muerto!");
-
-        rb.velocity = Vector2.zero;
-        animator.SetBool("estaMuerto", true);
-
-        // Espera 1 segundo antes de desactivar el jugador
-        Invoke("DesactivarJugador", 1f);
-      
+        GameOverManager manager = FindObjectOfType<GameOverManager>();
+        if (manager != null)
+        {
+            manager.ActivarGameOver();
+        }
+        else
+        {
+            Debug.LogWarning("No se encontró GameOverManager");
+        }
     }
+
+    Invoke("DesactivarJugador", 1f);
+}
 
     private void DesactivarJugador()
     {

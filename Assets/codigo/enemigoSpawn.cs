@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class enemigoSpawn : EnemigoPadre
+public class enemigoSpawn : EnemigoPadre    
 {
      [Header("Persecución")]
     public float rangoVision = 7f;
@@ -29,7 +29,7 @@ public class enemigoSpawn : EnemigoPadre
             // Detener si no ve al jugador
             rb.velocity = Vector2.zero;
             if (anim != null)
-                anim.Play("spawnidle"); // o cualquier animación de idle
+                anim.Play("spawn mov");
         }
     }
 
