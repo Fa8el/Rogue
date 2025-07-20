@@ -1,6 +1,4 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class managerAlmuerzo : MonoBehaviour
 {
@@ -16,7 +14,7 @@ public class managerAlmuerzo : MonoBehaviour
             Destroy(gameObject);
 
         if (panelVictoria != null)
-            panelVictoria.SetActive(false);  // Desactiva panel al iniciar
+            panelVictoria.SetActive(false);  // Oculta al inicio
     }
 
     public void SumarAlmuerzo()
@@ -28,24 +26,10 @@ public class managerAlmuerzo : MonoBehaviour
         {
             if (panelVictoria != null)
             {
-                panelVictoria.SetActive(true);   // Muestra el panel
-                Time.timeScale = 0f;             // Pausa la escena
+                panelVictoria.SetActive(true); // Muestra el panel
+                Time.timeScale = 0f;           // Pausa TODO el juego
             }
-
-            // Usa StartCoroutine en la instancia, pero con WaitForSecondsRealtime para que corra aunque el juego esté pausado
-            instancia.StartCoroutine(EsperarYCambiarEscena());
         }
-    }
-
-    private IEnumerator EsperarYCambiarEscena()
-    {
-        // Espera 3 segundos en tiempo real, no afectado por timeScale
-        yield return new WaitForSecondsRealtime(3f);
-
-        // Antes de cambiar de escena, reanuda el tiempo para evitar problemas
-        Time.timeScale = 1f;
-
-        SceneManager.LoadScene("EscenaFinal");
     }
 }
 
